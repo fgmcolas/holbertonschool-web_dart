@@ -6,13 +6,20 @@ Future<double> calculateTotal() async {
     String userData = await fetchUserData();
     Map<String, dynamic> userJson = json.decode(userData);
     String userId = userJson["id"];
+
     String ordersData = await fetchUserOrders(userId);
     if (ordersData == "null" || ordersData.isEmpty) {
       return 0.0;
     }
 
-    List<dynamic> products = json.decode(ordersData);
-    if (products.isEmpty) {
+    List<dynamic>? products;
+    try {
+      products = json.decode(ordersData);
+    } catch (e) {
+      return -1;
+    }
+
+    if (products == null || products.isEmpty) {
       return 0.0;
     }
 
@@ -20,11 +27,23 @@ Future<double> calculateTotal() async {
     List<String> pricesData = await Future.wait(priceFutures);
 
     double totalPrice = 0.0;
-    for (String price in pricesData) {
+
+    for (int i = 0; i < pricesData.length; i++) {
+      String price = pricesData[i];
       if (price == "null" || price.isEmpty) {
         continue;
       }
-      totalPrice += json.decode(price) ?? 0.0;
+
+      double? parsedPrice;
+      try {
+        parsedPrice = json.decode(price);
+      } catch (e) {
+        return -1;
+      }
+
+      if (parsedPrice != null) {
+        totalPrice += parsedPrice;
+      }
     }
 
     return totalPrice;
